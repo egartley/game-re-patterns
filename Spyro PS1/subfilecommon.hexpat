@@ -1,9 +1,3 @@
-u64 ret;
-u64 ret2;
-
-u32 vramImageDataSize = 524288;
-u64 isStandardLevel = 1; // whether the current level is not a cutscene/credits flyover
-
 struct UnkSection {
     u32 size;
     if (size > 4) {
@@ -11,62 +5,30 @@ struct UnkSection {
     }
 };
 
-struct UnkCountSection {
+struct SoundEffect {
+    u32 offset;
+    u8 data[16];
+};
+
+struct ParticleEffect {
+    u8 data[12]; // something to do with textures, cannot be swapped out
+};
+
+struct ParticleEffectSection {
     u32 size;
     u32 count;
-    padding[12 * count];
-};
-
-struct UnkPartsSection {
-    ret = $;
-    u32 size;
-    ret2 = $;
-    u32 subSize;
-    u32 count;
-    u32 offsets[count];
-    $ = ret2 + subSize;
-    u32 count2;
-    u32 offsets2[count2];
-    $ = ret + size;
-};
-
-struct SkyPart {
-    padding[8]; // unknown
-    s16 globalY;
-    s16 globalZ;
-    u16 vertexCount;
-    s16 globalX;
-    u16 polyCount;
-    u16 colorCount;
-    padding[4]; // unknown, presumably flags
-    u32 vertices[vertexCount];
-    u32 colors[colorCount]; // alpha always = 0x30
-    u8 polygons[polyCount * 8];
-};
-
-struct SkySection {
-    u32 size;
-    u32 clearColor;
-    u32 partCount;
-    u32 partOffsets[partCount];
-    SkyPart parts[partCount];
-};
-
-struct PortalSkySection {
-    padding[4];
-    u32 structCount;
-    padding[24]; // unknown
-    padding[12 * structCount]; // unknown 12-byte structures
-    padding[20]; // always zero?
-    SkySection sky;
+    ParticleEffect effects[count];
 };
 
 struct MDLPolygon {
-    u8 data[8];
-    padding[8]; // unknown
+    u8 data[16];
 };
 
 struct LODPolygon {
+    u8 data[8];
+};
+
+struct TextureHeader {
     u8 data[8];
 };
 
@@ -92,52 +54,6 @@ struct GroundPart {
     u32 mdlColors[mdlColorCount];
     u32 unkColors[mdlColorCount];
     MDLPolygon mdlPolys[mdlPolyCount];
-};
-
-struct GroundSection {
-    u32 size;
-    u32 partCount;
-    u32 partOffsets[partCount];
-    GroundPart parts[partCount];
-};
-
-struct TextureHeader {
-    u8 data[8];
-};
-
-struct TextureHeaderSection {
-    u32 size;
-    u32 count;
-    TextureHeader headers[count * 23];
-};
-
-struct Subfile1 {
-    u32 offset;
-    u32 size;
-    u32 vramStart @ offset;
-    u32 vagStart @ offset + vramImageDataSize;
-};
-
-struct Subfile2 {
-    u32 offset;
-    u32 size;
-    $ = offset;
-    TextureHeaderSection textureHeaders;
-    GroundSection ground;
-    if (isStandardLevel == 1) {
-        UnkPartsSection unkPartsSection;
-        UnkSection unkSection1;
-        UnkSection unkSection2;
-    }
-    SkySection sky;
-    if (isStandardLevel == 1) {
-        u32 portalSkyCount;
-        if (portalSkyCount > 0) {
-            PortalSkySection portalSkies[portalSkyCount];
-        }
-        UnkCountSection unkCountSection;
-        UnkSection unkSection3;
-    }
 };
 
 bitfield FrameBits {
@@ -200,14 +116,6 @@ struct AnimationPointer {
     }
 };
 
-struct Subfile3 {
-    u32 offset;
-    u32 size;
-    // contents is entirely the animations, but need to use the pointers
-    // max of 64, any less will have a zero offset
-    AnimationPointer animations[64] @ 0x50;
-};
-
 struct MobyInstance {
     padding[12]; // unknown
     u32 x;
@@ -216,7 +124,7 @@ struct MobyInstance {
     padding[30]; // unknown
     u8 classId;
     padding[15]; // unknown
-    u8 yaw;
+    s8 yaw;
     padding[17]; // unknown
 };
 
@@ -225,23 +133,3 @@ struct MobyListSection {
     u32 count;
     MobyInstance instances[count];
 };
-
-struct Subfile4 {
-    u32 offset;
-    u32 size;
-    $ = offset;
-    padding[136];
-    UnkSection unkSection1;
-    UnkSection unkSection2;
-    UnkSection unkSection3;
-    UnkSection unkSection4;
-    UnkSection unkSection5;
-    UnkSection unkSection6;
-    UnkSection unkSection7;
-    MobyListSection mobyListSection;
-};
-
-Subfile1 subfile1 @ 0x0;
-Subfile2 subfile2 @ 0x8;
-Subfile3 subfile3 @ 0x10;
-Subfile4 subfile4 @ 0x18;
